@@ -2,9 +2,10 @@
 
 import secrets
 from datetime import UTC, datetime
+from typing import Any
 
-from sqlalchemy import DateTime, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import JSON, DateTime, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
 
@@ -45,3 +46,172 @@ class Lead(Base):
     @property
     def is_confirmed(self) -> bool:
         return self.confirmed_at is not None
+
+
+# --- Auth ---
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+    last_login_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=None
+    )
+
+
+class MagicLinkToken(Base):
+    """Single-use, short-lived login token emailed to the user."""
+
+    __tablename__ = "magic_link_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    token: Mapped[str] = mapped_column(
+        String(64), unique=True, index=True, default=new_token
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=None
+    )
+
+
+class SessionToken(Base):
+    """Opaque bearer stored in an HttpOnly cookie."""
+
+    __tablename__ = "session_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    token: Mapped[str] = mapped_column(
+        String(64), unique=True, index=True, default=new_token
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+# --- Curriculum ---
+
+
+class Course(Base):
+    __tablename__ = "courses"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    slug: Mapped[str] = mapped_column(String(100), unique=True, index=True)
+    title: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str] = mapped_column(Text, default="")
+
+    modules: Mapped[list["Module"]] = relationship(
+        back_populates="course", order_by="Module.number"
+    )
+
+
+class Module(Base):
+    __tablename__ = "modules"
+    __table_args__ = (UniqueConstraint("course_id", "number"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"))
+    number: Mapped[int] = mapped_column()
+    title: Mapped[str] = mapped_column(String(200))
+    outcome: Mapped[str] = mapped_column(Text, default="")
+
+    course: Mapped[Course] = relationship(back_populates="modules")
+    lessons: Mapped[list["Lesson"]] = relationship(
+        back_populates="module", order_by="Lesson.position"
+    )
+
+
+class Lesson(Base):
+    __tablename__ = "lessons"
+    __table_args__ = (UniqueConstraint("module_id", "code"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    module_id: Mapped[int] = mapped_column(ForeignKey("modules.id"))
+    code: Mapped[str] = mapped_column(String(10), index=True)  # e.g. "3.3"
+    position: Mapped[int] = mapped_column()
+    title: Mapped[str] = mapped_column(String(300))
+    video_url: Mapped[str | None] = mapped_column(String(500), default=None)
+    body_md: Mapped[str] = mapped_column(Text, default="")
+
+    module: Mapped[Module] = relationship(back_populates="lessons")
+    lab: Mapped["Lab | None"] = relationship(back_populates="lesson")
+    quiz_questions: Mapped[list["QuizQuestion"]] = relationship(
+        back_populates="lesson", order_by="QuizQuestion.position"
+    )
+
+
+class Lab(Base):
+    __tablename__ = "labs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    lesson_id: Mapped[int] = mapped_column(ForeignKey("lessons.id"), unique=True)
+    title: Mapped[str] = mapped_column(String(300))
+    repo_template_url: Mapped[str] = mapped_column(String(500), default="")
+    grading_spec: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+
+    lesson: Mapped[Lesson] = relationship(back_populates="lab")
+
+
+class QuizQuestion(Base):
+    __tablename__ = "quiz_questions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    lesson_id: Mapped[int] = mapped_column(ForeignKey("lessons.id"), index=True)
+    position: Mapped[int] = mapped_column()
+    prompt: Mapped[str] = mapped_column(Text)
+    choices: Mapped[list[str]] = mapped_column(JSON)
+    correct_index: Mapped[int] = mapped_column()
+
+    lesson: Mapped[Lesson] = relationship(back_populates="quiz_questions")
+
+
+# --- Student state ---
+
+
+class Enrollment(Base):
+    __tablename__ = "enrollments"
+    __table_args__ = (UniqueConstraint("user_id", "course_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"))
+    tier: Mapped[str] = mapped_column(String(30), default="self_paced")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+
+
+class LessonProgress(Base):
+    __tablename__ = "lesson_progress"
+    __table_args__ = (UniqueConstraint("user_id", "lesson_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    lesson_id: Mapped[int] = mapped_column(ForeignKey("lessons.id"))
+    completed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+
+
+class QuizAttempt(Base):
+    __tablename__ = "quiz_attempts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    lesson_id: Mapped[int] = mapped_column(ForeignKey("lessons.id"), index=True)
+    score: Mapped[int] = mapped_column()
+    total: Mapped[int] = mapped_column()
+    answers: Mapped[list[int]] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )

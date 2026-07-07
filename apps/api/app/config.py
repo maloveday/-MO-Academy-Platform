@@ -25,6 +25,8 @@ class Settings(BaseSettings):
 
     admin_token: str = ""
     payments_enabled: bool = False
+    # Set true in production (HTTPS) so session cookies are Secure.
+    cookie_secure: bool = False
 
     web_dir: Path = REPO_ROOT / "apps" / "web"
     content_dir: Path = REPO_ROOT / "content"

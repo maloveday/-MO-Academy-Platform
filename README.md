@@ -54,7 +54,11 @@ uvicorn app.main:app --reload
       (console in dev), admin CSV export (`GET /api/admin/leads.csv`,
       `X-Admin-Token` header), checkout stub with waitlist fallback
       (`PAYMENTS_ENABLED=false`).
-- [ ] Phase 2 — Course platform (magic-link auth, lessons, quizzes, progress)
+- [x] **Phase 2 — Course platform (LMS-lite)**: email magic-link login
+      (`/login.html`), Course → Module → Lesson → Lab data model seeded from
+      `content/syllabus_full.md` (`python -m app.seed`, idempotent), student
+      dashboard (`/dashboard.html`) with progress tracking, markdown lesson
+      viewer, and a multiple-choice quiz engine with stored attempts.
 - [ ] Phase 3 — Lab grading harness (`mo_teach`, sandboxed grader, 2 labs)
 - [ ] Phase 4 — Ops (admin panel, CI, deploy notes)
 
@@ -65,7 +69,9 @@ cd apps/api && pytest
 ```
 
 Covers the signup flow (capture → confirm → primer, idempotency, token
-rotation), checkout waitlist stub, and admin export auth.
+rotation), checkout waitlist stub, admin export auth, magic-link auth
+(single-use, expiry, sessions, logout), syllabus seeding, progress
+tracking, and quiz grading.
 
 ## Configuration
 

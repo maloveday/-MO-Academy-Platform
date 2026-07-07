@@ -12,6 +12,7 @@ from app.config import Settings, get_settings
 from app.db import get_db
 from app.emailer import EmailBackend, EmailMessage, get_email_backend
 from app.models import Lead, new_token, utcnow
+from app.pages import console_page
 
 router = APIRouter(prefix="/api/signup", tags=["signup"])
 
@@ -80,22 +81,6 @@ def signup(
     )
 
 
-def _page(title: str, body: str) -> str:
-    return f"""<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{title} — MO Academy</title>
-<style>
-  body {{ background:#0a0a06; color:#e8d5a3; font-family:Consolas,Menlo,monospace;
-         display:grid; place-items:center; min-height:100vh; margin:0; padding:1rem; }}
-  main {{ max-width:36rem; border:1px solid #b37c00; padding:2rem; background:#12100a; }}
-  h1 {{ color:#ffb000; font-size:1.3rem; }}
-  a {{ color:#ffb000; }}
-</style></head>
-<body><main><h1>{title}</h1><p>{body}</p>
-<p><a href="/">&larr; back to MO Academy</a></p></main></body></html>"""
-
-
 @router.get("/confirm", response_class=HTMLResponse)
 def confirm(
     token: str,
@@ -106,7 +91,7 @@ def confirm(
     lead = db.scalar(select(Lead).where(Lead.confirm_token == token))
     if lead is None:
         return HTMLResponse(
-            _page(
+            console_page(
                 "Link not recognised",
                 "This confirmation link is invalid or expired. "
                 "Sign up again to get a fresh one.",
@@ -121,7 +106,7 @@ def confirm(
     db.commit()
 
     return HTMLResponse(
-        _page(
+        console_page(
             "Email confirmed",
             "You're in. “MO in 30 Minutes” is on its way to your inbox.",
         )
