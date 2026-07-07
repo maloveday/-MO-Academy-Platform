@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MO Academy — CCSDS Mission Operations Training</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0F0D; --panel:#101612; --line:#2A2416;
+  --amber:#FFB000; --amber-dim:#8A6A1F;
+  --ink:#D8D4C8; --ink-dim:#8F8B7E;
+  --valid:#3FBF7F;
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif; --disp:'Space Grotesk',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6}
+a{color:var(--amber)}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+
+/* status bar */
+.statusbar{position:sticky;top:0;z-index:10;background:var(--panel);border-bottom:1px solid var(--line);
+  font-family:var(--mono);font-size:12px;letter-spacing:.06em}
+.statusbar .wrap{display:flex;justify-content:space-between;align-items:center;height:44px}
+.statusbar .sys{color:var(--amber);font-weight:600}
+.statusbar .utc{color:var(--ink-dim)}
+.statusbar .link{color:var(--ink);text-decoration:none;margin-left:20px}
+.statusbar .link:hover{color:var(--amber)}
+
+/* hero */
+.hero{padding:88px 0 48px;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--amber-dim);text-transform:uppercase}
+h1{font-family:var(--disp);font-weight:700;font-size:clamp(34px,5.2vw,58px);line-height:1.08;
+  letter-spacing:-.015em;margin:16px 0 20px;max-width:18ch}
+h1 em{font-style:normal;color:var(--amber)}
+.hero p{max-width:56ch;color:var(--ink-dim);font-size:18px}
+.malheader{margin-top:28px;display:inline-block;background:var(--panel);border:1px solid var(--line);
+  padding:14px 18px;font-family:var(--mono);font-size:13px;line-height:1.8;color:var(--ink-dim)}
+.malheader b{color:var(--amber);font-weight:600}
+.cta-row{margin-top:32px;display:flex;gap:16px;flex-wrap:wrap}
+.btn{font-family:var(--mono);font-size:14px;letter-spacing:.04em;padding:13px 22px;border:1px solid var(--amber);
+  text-decoration:none;transition:background .15s,color .15s}
+.btn.primary{background:var(--amber);color:#161006;font-weight:600}
+.btn.primary:hover{background:#FFC63D}
+.btn.ghost{color:var(--amber)}
+.btn.ghost:hover{background:rgba(255,176,0,.08)}
+
+/* telemetry strip — signature */
+.telemetry{border-bottom:1px solid var(--line);background:var(--panel)}
+.telemetry .wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0}
+.tcell{padding:18px 20px;border-left:1px solid var(--line);font-family:var(--mono)}
+.tcell:first-child{border-left:none}
+.tcell .tname{font-size:11px;letter-spacing:.1em;color:var(--ink-dim);text-transform:uppercase}
+.tcell .tval{font-size:22px;color:var(--amber);margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.tcell .tflag{font-size:11px;color:var(--valid)}
+.tcell .tflag::before{content:'▮ ';font-size:9px}
+
+/* sections */
+section{padding:72px 0;border-bottom:1px solid var(--line)}
+h2{font-family:var(--disp);font-weight:700;font-size:clamp(24px,3vw,34px);letter-spacing:-.01em;margin:10px 0 36px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.card{background:var(--panel);border:1px solid var(--line);padding:26px}
+.card h3{font-family:var(--disp);font-size:19px;margin-bottom:10px}
+.card p{color:var(--ink-dim);font-size:15px}
+.card .tag{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--amber-dim);text-transform:uppercase}
+.card h3{margin-top:8px}
+
+/* modules table */
+.modtable{width:100%;border-collapse:collapse;font-size:15px}
+.modtable th{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--amber-dim);text-align:left;padding:10px 14px;border-bottom:1px solid var(--amber-dim)}
+.modtable td{padding:16px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.modtable td.num{font-family:var(--mono);color:var(--amber);white-space:nowrap}
+.modtable td.name{font-weight:600}
+.modtable td.desc{color:var(--ink-dim)}
+
+/* pricing */
+.price .tval{font-size:30px}
+.price li{list-style:none;color:var(--ink-dim);font-size:14px;padding:5px 0;border-bottom:1px dashed var(--line)}
+.price ul{margin:16px 0 22px}
+.price .btn{display:inline-block}
+
+/* signup */
+.signup{background:var(--panel);border:1px solid var(--amber-dim);padding:40px;display:flex;
+  gap:28px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.signup h2{margin:0 0 8px}
+.signup p{color:var(--ink-dim);max-width:48ch}
+.sigform{display:flex;gap:10px;flex-wrap:wrap}
+.sigform input{font-family:var(--mono);font-size:14px;padding:13px 16px;background:var(--bg);
+  border:1px solid var(--line);color:var(--ink);min-width:240px}
+.sigform input::placeholder{color:var(--ink-dim)}
+.sigform button{background:var(--amber);color:#161006;cursor:pointer}
+.sigstatus{font-family:var(--mono);font-size:13px;margin-top:10px;min-height:1.4em}
+.sigstatus.ok{color:var(--valid)}
+.sigstatus.err{color:#E5484D}
+
+footer{padding:36px 0 60px;font-family:var(--mono);font-size:12px;color:var(--ink-dim)}
+footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="statusbar" role="banner">
+  <div class="wrap">
+    <span class="sys">MO&nbsp;ACADEMY</span>
+    <nav>
+      <a class="link" href="#audience">Who</a>
+      <a class="link" href="#modules">Curriculum</a>
+      <a class="link" href="#pricing">Pricing</a>
+      <a class="link" href="#primer">Free primer</a>
+    </nav>
+    <span class="utc" id="utc">—</span>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">CCSDS 520 · 521 · 522 — Practitioner training</div>
+    <h1>Ship interoperable ground systems with the <em>CCSDS MO Framework</em>.</h1>
+    <p>A four-module, lab-driven course taking space systems engineers from Message Abstraction Layer
+      fundamentals to designing and deploying custom Monitor &amp; Control services — graded against a
+      reference consumer.</p>
+    <div class="malheader" aria-hidden="true">
+      <b>interaction</b> = PUB-SUB &nbsp;·&nbsp; <b>service</b> = Parameter &nbsp;·&nbsp; <b>operation</b> = monitorValue<br>
+      <b>from</b> = you, today &nbsp;·&nbsp; <b>to</b> = engineer who designs MO services
+    </div>
+    <div class="cta-row">
+      <a class="btn primary" href="#pricing">View course tiers</a>
+      <a class="btn ghost" href="#primer">Get the free 30-min primer</a>
+    </div>
+  </div>
+</header>
+
+<div class="telemetry" aria-label="Live demonstration telemetry">
+  <div class="wrap">
+    <div class="tcell"><div class="tname">spacecraft.eps / BatteryVoltage</div>
+      <div class="tval" id="tv0">28.10 V</div><div class="tflag">VALID · PUB-SUB</div></div>
+    <div class="tcell"><div class="tname">spacecraft.aocs / WheelSpeed_X</div>
+      <div class="tval" id="tv1">3041 rpm</div><div class="tflag">VALID · PUB-SUB</div></div>
+    <div class="tcell"><div class="tname">spacecraft.tcs / HeaterState</div>
+      <div class="tval" id="tv2">ON</div><div class="tflag">ACK · SUBMIT</div></div>
+    <div class="tcell"><div class="tname">ground.mcs / SubscribersActive</div>
+      <div class="tval" id="tv3">147</div><div class="tflag">VALID · PUB-SUB</div></div>
+  </div>
+</div>
+
+<section id="audience">
+  <div class="wrap">
+    <div class="eyebrow">Consumers of this service</div>
+    <h2>Built for three kinds of engineer</h2>
+    <div class="cards">
+      <div class="card"><span class="tag">Segment 01</span><h3>Aerospace students &amp; new grads</h3>
+        <p>Learn the ground-segment standard agencies actually mandate. Graduate with a capstone MO service in your portfolio, not just coursework.</p></div>
+      <div class="card"><span class="tag">Segment 02</span><h3>Junior agency engineers</h3>
+        <p>Your program adopted MO for cross-support. Get from Blue Book PDFs to working Parameter and Action providers in four modules.</p></div>
+      <div class="card"><span class="tag">Segment 03</span><h3>Smallsat startup teams</h3>
+        <p>No legacy GDS, no time to reinvent M&amp;C. Train the team, then bring us in to prototype your first operational service.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="modules">
+  <div class="wrap">
+    <div class="eyebrow">Mission phases</div>
+    <h2>Four modules. Sixteen labs. One deployed service.</h2>
+    <table class="modtable">
+      <thead><tr><th>Phase</th><th>Module</th><th>You will be able to</th></tr></thead>
+      <tbody>
+        <tr><td class="num">M-01</td><td class="name">CCSDS MO Foundations</td>
+          <td class="desc">Explain the layered MO architecture and justify it against packet-based TM/TC to a program manager.</td></tr>
+        <tr><td class="num">M-02</td><td class="name">The Message Abstraction Layer</td>
+          <td class="desc">Select the right interaction pattern — SEND to PUB-SUB — and model data as MAL Attributes and Composites.</td></tr>
+        <tr><td class="num">M-03</td><td class="name">Monitor &amp; Control Services</td>
+          <td class="desc">Implement working Parameter and Action providers and consumers, graded against a test harness.</td></tr>
+        <tr><td class="num">M-04</td><td class="name">Advanced Service Interface Design</td>
+          <td class="desc">Specify, generate, and deploy a custom MO service that interoperates with reference tooling.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="wrap">
+    <div class="eyebrow">Capability sets</div>
+    <h2>Pricing</h2>
+    <div class="cards price">
+      <div class="card"><span class="tag">Self-paced</span>
+        <div class="tval">$399</div>
+        <ul><li>All 4 modules, 16 labs</li><li>Automated grading harness</li><li>Docker lab environment</li><li>Lifetime updates</li></ul>
+        <a class="btn ghost waitlist" data-product="self_paced" href="#primer">Join waitlist</a></div>
+      <div class="card"><span class="tag">Cohort</span>
+        <div class="tval">$1,600<span style="font-size:14px;color:var(--ink-dim)">/seat</span></div>
+        <ul><li>Everything in self-paced</li><li>Weekly live design reviews</li><li>Capstone graded by instructor</li><li>Team license: $8k / 10 seats</li></ul>
+        <a class="btn primary waitlist" data-product="cohort" href="#primer">Join waitlist</a></div>
+      <div class="card"><span class="tag">Consulting</span>
+        <div class="tval">from $15k</div>
+        <ul><li>On-site / remote workshops</li><li>Your capstone = your real service</li><li>Architecture &amp; spec review</li><li>Retainer from $3k/mo</li></ul>
+        <a class="btn ghost waitlist" data-product="consulting" href="#primer">Book a call</a></div>
+    </div>
+  </div>
+</section>
+
+<section id="primer" style="border-bottom:none">
+  <div class="wrap">
+    <div class="signup">
+      <div>
+        <h2>MO in 30 Minutes</h2>
+        <p>The free primer: architecture, the six MAL interaction patterns, and why identity ≠ definition ≠ value. Read it before your next standards meeting.</p>
+      </div>
+      <div>
+        <form class="sigform" id="signup-form" novalidate>
+          <input type="email" id="signup-email" name="email" placeholder="you@agency.int"
+                 aria-label="Email address" autocomplete="email" required>
+          <button class="btn primary" type="submit">Send the primer</button>
+        </form>
+        <p class="sigstatus" id="signup-status" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>MO ACADEMY · CCSDS is a registered mark of its owners; this course is independent.</span>
+    <span>LINK: NOMINAL</span>
+  </div>
+</footer>
+
+<script>
+// UTC clock
+const utc=document.getElementById('utc');
+function tick(){utc.textContent=new Date().toISOString().slice(0,19).replace('T',' ')+' UTC';}
+tick();setInterval(tick,1000);
+// Telemetry strip — gentle value drift
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(!reduce){
+  let v=28.10,w=3041,s=147;
+  setInterval(()=>{
+    v=Math.max(26.5,Math.min(29.5,v+(Math.random()-.5)*.12));
+    w=Math.round(Math.max(2900,Math.min(3200,w+(Math.random()-.5)*18)));
+    if(Math.random()<.15)s+=Math.random()<.5?-1:1;
+    document.getElementById('tv0').textContent=v.toFixed(2)+' V';
+    document.getElementById('tv1').textContent=w+' rpm';
+    document.getElementById('tv3').textContent=s;
+  },1400);
+}
+
+// Signup funnel — POST /api/signup, with waitlist product tracking
+(function(){
+  const form=document.getElementById('signup-form');
+  const emailInput=document.getElementById('signup-email');
+  const status=document.getElementById('signup-status');
+  let pendingProduct=null;
+
+  document.querySelectorAll('a.waitlist').forEach(a=>{
+    a.addEventListener('click',()=>{
+      pendingProduct=a.dataset.product;
+      status.className='sigstatus';
+      status.textContent='WAITLIST: '+pendingProduct.toUpperCase()+' — enter your email to confirm.';
+      emailInput.focus({preventScroll:true});
+    });
+  });
+
+  function setStatus(cls,msg){status.className='sigstatus '+cls;status.textContent=msg;}
+
+  async function post(url,body){
+    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok)throw new Error(typeof data.detail==='string'?data.detail:'Request failed ('+res.status+')');
+    return data;
+  }
+
+  form.addEventListener('submit',async ev=>{
+    ev.preventDefault();
+    const email=emailInput.value.trim();
+    if(!email){setStatus('err','ERR: enter an email address.');return;}
+    setStatus('','TX: transmitting…');
+    try{
+      if(pendingProduct){
+        await post('/api/checkout',{email,product:pendingProduct});
+      }
+      const source=pendingProduct?('waitlist:'+pendingProduct):'landing:primer';
+      const data=await post('/api/signup',{email,source});
+      setStatus('ok','ACK: '+(data.message||'Check your inbox to confirm.'));
+      form.reset();
+      pendingProduct=null;
+    }catch(err){
+      setStatus('err','ERR: '+err.message);
+    }
+  });
+})();
+</script>
+</body>
+</html>
