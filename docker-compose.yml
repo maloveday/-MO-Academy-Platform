@@ -10,6 +10,12 @@ services:
         required: false
     environment:
       DATABASE_URL: sqlite:////data/mo_academy.sqlite3
+      # Dev default: lab submissions graded in an unsandboxed subprocess.
+      # For the production sandbox, build the grader image
+      # (docker build -f infra/grader.Dockerfile -t mo-academy-grader .),
+      # set GRADER_MODE=docker, and mount the Docker socket:
+      #   - /var/run/docker.sock:/var/run/docker.sock
+      GRADER_MODE: ${GRADER_MODE:-subprocess}
     volumes:
       - api-data:/data
 

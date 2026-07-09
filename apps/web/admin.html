@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ops — MO Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0F0D; --panel:#101612; --line:#2A2416;
+  --amber:#FFB000; --amber-dim:#8A6A1F;
+  --ink:#D8D4C8; --ink-dim:#8F8B7E;
+  --valid:#3FBF7F; --err:#E5484D;
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif; --disp:'Space Grotesk',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+a{color:var(--amber)}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+.statusbar{position:sticky;top:0;z-index:10;background:var(--panel);border-bottom:1px solid var(--line);
+  font-family:var(--mono);font-size:12px;letter-spacing:.06em}
+.statusbar .bar{display:flex;justify-content:space-between;align-items:center;height:44px;padding:0 20px;gap:12px}
+.statusbar .sys{color:var(--amber);font-weight:600}
+.statusbar button{font-family:var(--mono);font-size:12px;background:none;border:1px solid var(--line);
+  color:var(--ink);padding:5px 12px;cursor:pointer}
+.statusbar button:hover{border-color:var(--amber);color:var(--amber)}
+
+.wrap{max-width:1100px;margin:0 auto;padding:28px 20px}
+.gate{max-width:440px;margin:80px auto;background:var(--panel);border:1px solid var(--amber-dim);padding:36px}
+.gate h1{font-family:var(--disp);font-size:24px;margin-bottom:8px}
+.gate p{color:var(--ink-dim);font-size:14px;margin-bottom:18px}
+.gate form{display:flex;gap:10px}
+input,select{font-family:var(--mono);font-size:14px;padding:11px 14px;background:var(--bg);
+  border:1px solid var(--line);color:var(--ink)}
+input::placeholder{color:var(--ink-dim)}
+.btn{font-family:var(--mono);font-size:13px;letter-spacing:.04em;padding:11px 18px;
+  border:1px solid var(--amber);background:var(--amber);color:#161006;font-weight:600;cursor:pointer}
+.btn:hover{background:#FFC63D}
+.btn.ghost{background:none;color:var(--amber)}
+.btn.small{padding:5px 10px;font-size:12px}
+
+[role="tablist"]{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+[role="tab"]{font-family:var(--mono);font-size:13px;letter-spacing:.06em;padding:9px 16px;
+  background:none;border:1px solid var(--line);color:var(--ink);cursor:pointer}
+[role="tab"][aria-selected="true"]{border-color:var(--amber);color:var(--amber);background:rgba(255,176,0,.07)}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.tile{background:var(--panel);border:1px solid var(--line);padding:18px}
+.tile .tname{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--ink-dim);text-transform:uppercase}
+.tile .tval{font-family:var(--mono);font-size:26px;color:var(--amber);margin-top:6px;font-variant-numeric:tabular-nums}
+.tile .tsub{font-family:var(--mono);font-size:12px;color:var(--ink-dim);margin-top:4px}
+
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--panel);border:1px solid var(--line)}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber-dim);
+  text-align:left;padding:10px 12px;border-bottom:1px solid var(--amber-dim)}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+td.mono{font-family:var(--mono);font-size:13px}
+.ok{color:var(--valid)}
+.bad{color:var(--err)}
+.dim{color:var(--ink-dim)}
+.status{font-family:var(--mono);font-size:13px;margin:12px 0;min-height:1.3em}
+.status.ok{color:var(--valid)}
+.status.err{color:var(--err)}
+.rowform{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 20px;align-items:center}
+h2{font-family:var(--disp);font-size:20px;margin:6px 0 14px}
+.loading{font-family:var(--mono);color:var(--ink-dim)}
+</style>
+</head>
+<body>
+
+<div class="statusbar">
+  <div class="bar">
+    <span class="sys">MO&nbsp;ACADEMY&nbsp;·&nbsp;OPS</span>
+    <span class="dim" id="clock" style="font-family:var(--mono)"></span>
+    <button id="lock" type="button" hidden>Lock panel</button>
+  </div>
+</div>
+
+<div class="gate" id="gate">
+  <h1>Ops panel</h1>
+  <p>Enter the admin token (<code>ADMIN_TOKEN</code>) to unlock. It is kept in
+     this tab's session storage only.</p>
+  <form id="gate-form">
+    <input type="password" id="token" placeholder="admin token" aria-label="Admin token" autofocus>
+    <button class="btn" type="submit">Unlock</button>
+  </form>
+  <p class="status err" id="gate-status" role="status" aria-live="polite"></p>
+</div>
+
+<main class="wrap" id="panel" hidden>
+  <div role="tablist" aria-label="Ops sections">
+    <button role="tab" aria-selected="true" data-tab="metrics" id="tab-metrics">Metrics</button>
+    <button role="tab" aria-selected="false" data-tab="leads" id="tab-leads">Leads</button>
+    <button role="tab" aria-selected="false" data-tab="queue" id="tab-queue">Grading queue</button>
+    <button role="tab" aria-selected="false" data-tab="cohorts" id="tab-cohorts">Cohorts</button>
+    <button role="tab" aria-selected="false" data-tab="students" id="tab-students">Students</button>
+  </div>
+
+  <section id="view-metrics" role="tabpanel" aria-labelledby="tab-metrics">
+    <div class="tiles" id="metric-tiles"><p class="loading">Loading…</p></div>
+  </section>
+
+  <section id="view-leads" role="tabpanel" aria-labelledby="tab-leads" hidden>
+    <h2>Leads <a class="btn ghost small" id="csv-link" href="#" style="margin-left:10px">Download CSV</a></h2>
+    <div id="leads-table"></div>
+  </section>
+
+  <section id="view-queue" role="tabpanel" aria-labelledby="tab-queue" hidden>
+    <h2>Lab grading queue</h2>
+    <div id="queue-table"></div>
+  </section>
+
+  <section id="view-cohorts" role="tabpanel" aria-labelledby="tab-cohorts" hidden>
+    <h2>Cohorts</h2>
+    <form class="rowform" id="cohort-form">
+      <input id="cohort-name" placeholder="name (e.g. 2026-Q4)" aria-label="Cohort name" required>
+      <input id="cohort-date" type="date" aria-label="Start date">
+      <input id="cohort-seats" type="number" value="10" min="1" max="500" aria-label="Seats" style="width:90px">
+      <button class="btn" type="submit">Create cohort</button>
+    </form>
+    <form class="rowform" id="assign-form">
+      <select id="assign-cohort" aria-label="Cohort to assign to"></select>
+      <input id="assign-email" type="email" placeholder="student@agency.int" aria-label="Student email" required>
+      <button class="btn ghost" type="submit">Assign student</button>
+    </form>
+    <p class="status" id="cohort-status" role="status" aria-live="polite"></p>
+    <div id="cohorts-table"></div>
+  </section>
+
+  <section id="view-students" role="tabpanel" aria-labelledby="tab-students" hidden>
+    <h2>Students</h2>
+    <div id="students-table"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+let TOKEN=sessionStorage.getItem('mo_admin_token')||'';
+
+function clock(){$('clock').textContent=new Date().toISOString().slice(0,19).replace('T',' ')+' UTC';}
+clock();setInterval(clock,1000);
+
+async function api(path,opts){
+  opts=opts||{};
+  opts.headers=Object.assign({'X-Admin-Token':TOKEN},opts.headers||{});
+  const res=await fetch(path,opts);
+  if(res.status===403){lock();throw new Error('admin token rejected');}
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(typeof data.detail==='string'?data.detail:'Request failed ('+res.status+')');
+  return data;
+}
+
+function lock(){
+  sessionStorage.removeItem('mo_admin_token');TOKEN='';
+  $('panel').hidden=true;$('gate').hidden=false;$('lock').hidden=true;
+  $('token').focus();
+}
+
+function table(headers,rows){
+  const t=document.createElement('table');
+  const thead=document.createElement('thead');const tr=document.createElement('tr');
+  headers.forEach(h=>{const th=document.createElement('th');th.textContent=h;tr.appendChild(th);});
+  thead.appendChild(tr);t.appendChild(thead);
+  const tbody=document.createElement('tbody');
+  rows.forEach(cells=>{
+    const tr=document.createElement('tr');
+    cells.forEach(cell=>{
+      const td=document.createElement('td');
+      if(cell instanceof Node){td.appendChild(cell);td.className='mono';}
+      else if(cell&&typeof cell==='object'){td.textContent=cell.text;td.className=cell.cls||'';}
+      else{td.textContent=cell==null?'—':cell;td.className='mono';}
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  t.appendChild(tbody);
+  return t;
+}
+
+function tile(name,value,sub){
+  const d=document.createElement('div');d.className='tile';
+  d.innerHTML='<div class="tname"></div><div class="tval"></div><div class="tsub"></div>';
+  d.querySelector('.tname').textContent=name;
+  d.querySelector('.tval').textContent=value;
+  d.querySelector('.tsub').textContent=sub||'';
+  return d;
+}
+
+async function loadMetrics(){
+  const m=await api('/api/admin/metrics');
+  const box=$('metric-tiles');box.textContent='';
+  box.append(
+    tile('Leads',m.leads.total,m.leads.confirmed+' confirmed'),
+    tile('Waitlist · self-paced',m.waitlist.self_paced||0,'$'+(m.revenue_potential_usd.self_paced||0).toLocaleString()+' potential'),
+    tile('Waitlist · cohort',m.waitlist.cohort||0,'$'+(m.revenue_potential_usd.cohort||0).toLocaleString()+' potential'),
+    tile('Revenue potential','$'+m.revenue_potential_usd.total.toLocaleString(),'from waitlists'),
+    tile('Students',m.students.total,m.students.lesson_completions+' lesson completions'),
+    tile('Submissions graded',m.submissions.graded||0,(m.submissions.queued||0)+' queued · '+(m.submissions.error||0)+' errored')
+  );
+}
+
+async function loadLeads(){
+  const leads=await api('/api/admin/leads');
+  const box=$('leads-table');box.textContent='';
+  box.appendChild(table(
+    ['Email','Source','Confirmed','Captured'],
+    leads.map(l=>[l.email,l.source,
+      l.confirmed?{text:'YES',cls:'mono ok'}:{text:'no',cls:'mono dim'},
+      (l.created_at||'').slice(0,16).replace('T',' ')])
+  ));
+}
+
+async function loadQueue(){
+  const subs=await api('/api/admin/submissions');
+  const box=$('queue-table');box.textContent='';
+  box.appendChild(table(
+    ['#','Student','Lesson','Status','Score','Submitted',''],
+    subs.map(s=>{
+      const btn=document.createElement('button');
+      btn.className='btn ghost small';btn.type='button';btn.textContent='Regrade';
+      btn.addEventListener('click',async()=>{
+        btn.disabled=true;
+        try{await api('/api/admin/submissions/'+s.id+'/regrade',{method:'POST'});}catch(e){}
+        setTimeout(loadQueue,1200);
+      });
+      const status=s.status==='graded'
+        ?{text:s.passed?'PASS':'FAIL',cls:'mono '+(s.passed?'ok':'bad')}
+        :{text:s.status.toUpperCase(),cls:'mono '+(s.status==='error'?'bad':'dim')};
+      return [s.id,s.student,s.lesson,status,
+        s.score==null?'—':s.score.toFixed(2),
+        s.created_at.slice(0,16).replace('T',' '),btn];
+    })
+  ));
+}
+
+async function loadCohorts(){
+  const cohorts=await api('/api/admin/cohorts');
+  const box=$('cohorts-table');box.textContent='';
+  box.appendChild(table(
+    ['Cohort','Starts','Seats','Members'],
+    cohorts.map(c=>[c.name,c.starts_on||'TBD',c.seats,
+      {text:String(c.members),cls:'mono '+(c.members>=c.seats?'bad':'ok')}])
+  ));
+  const sel=$('assign-cohort');sel.textContent='';
+  cohorts.forEach(c=>{
+    const o=document.createElement('option');o.value=c.id;o.textContent=c.name;sel.appendChild(o);
+  });
+}
+
+async function loadStudents(){
+  const students=await api('/api/admin/students');
+  const box=$('students-table');box.textContent='';
+  box.appendChild(table(
+    ['Email','Tier','Cohort','Lessons done','Last login'],
+    students.map(s=>[s.email,s.tier||'—',s.cohort||'—',s.lessons_completed,
+      s.last_login_at?s.last_login_at.slice(0,16).replace('T',' '):'never'])
+  ));
+}
+
+const loaders={metrics:loadMetrics,leads:loadLeads,queue:loadQueue,cohorts:loadCohorts,students:loadStudents};
+
+function showTab(name){
+  document.querySelectorAll('[role="tab"]').forEach(t=>{
+    t.setAttribute('aria-selected',String(t.dataset.tab===name));
+  });
+  ['metrics','leads','queue','cohorts','students'].forEach(v=>{
+    $('view-'+v).hidden=v!==name;
+  });
+  loaders[name]().catch(err=>console.error(err));
+}
+
+document.querySelectorAll('[role="tab"]').forEach(tab=>{
+  tab.addEventListener('click',()=>showTab(tab.dataset.tab));
+});
+
+async function unlock(){
+  try{
+    await api('/api/admin/metrics');
+  }catch(err){
+    $('gate-status').textContent='ERR: '+err.message;return;
+  }
+  sessionStorage.setItem('mo_admin_token',TOKEN);
+  $('gate').hidden=true;$('panel').hidden=false;$('lock').hidden=false;
+  $('csv-link').addEventListener('click',async ev=>{
+    ev.preventDefault();
+    const res=await fetch('/api/admin/leads.csv',{headers:{'X-Admin-Token':TOKEN}});
+    const blob=await res.blob();
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);a.download='leads.csv';a.click();
+    URL.revokeObjectURL(a.href);
+  },{once:true});
+  showTab('metrics');
+}
+
+$('gate-form').addEventListener('submit',ev=>{
+  ev.preventDefault();
+  TOKEN=$('token').value.trim();
+  if(TOKEN)unlock();
+});
+$('lock').addEventListener('click',lock);
+
+$('cohort-form').addEventListener('submit',async ev=>{
+  ev.preventDefault();
+  const st=$('cohort-status');
+  try{
+    await api('/api/admin/cohorts',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name:$('cohort-name').value.trim(),
+        starts_on:$('cohort-date').value||null,
+        seats:Number($('cohort-seats').value)||10})});
+    st.className='status ok';st.textContent='ACK: cohort created.';
+    $('cohort-form').reset();$('cohort-seats').value=10;
+    loadCohorts();
+  }catch(err){st.className='status err';st.textContent='ERR: '+err.message;}
+});
+
+$('assign-form').addEventListener('submit',async ev=>{
+  ev.preventDefault();
+  const st=$('cohort-status');
+  try{
+    await api('/api/admin/cohorts/'+$('assign-cohort').value+'/assign',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:$('assign-email').value.trim()})});
+    st.className='status ok';st.textContent='ACK: student assigned.';
+    $('assign-email').value='';
+    loadCohorts();
+  }catch(err){st.className='status err';st.textContent='ERR: '+err.message;}
+});
+
+if(TOKEN)unlock();
+})();
+</script>
+</body>
+</html>

@@ -178,6 +178,20 @@ class QuizQuestion(Base):
 # --- Student state ---
 
 
+class Cohort(Base):
+    """A scheduled cohort run of the course."""
+
+    __tablename__ = "cohorts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True)
+    starts_on: Mapped[str | None] = mapped_column(String(10), default=None)  # ISO date
+    seats: Mapped[int] = mapped_column(default=10)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+
+
 class Enrollment(Base):
     __tablename__ = "enrollments"
     __table_args__ = (UniqueConstraint("user_id", "course_id"),)
@@ -186,6 +200,9 @@ class Enrollment(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"))
     tier: Mapped[str] = mapped_column(String(30), default="self_paced")
+    cohort_id: Mapped[int | None] = mapped_column(
+        ForeignKey("cohorts.id"), default=None
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow
     )
