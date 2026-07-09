@@ -105,6 +105,22 @@ legend{font-weight:600;margin-bottom:8px;font-size:15px}
 .qstatus{font-family:var(--mono);font-size:13px;margin-top:12px;min-height:1.4em}
 .qstatus.ok{color:var(--valid)}
 .qstatus.err{color:var(--err)}
+
+.lab-label{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.08em;
+  color:var(--ink-dim);text-transform:uppercase;margin:16px 0 8px}
+#lab-code{width:100%;font-family:var(--mono);font-size:13px;line-height:1.5;
+  background:var(--bg);border:1px solid var(--line);color:var(--ink);padding:12px;
+  resize:vertical;tab-size:4}
+.rubric{margin-top:14px;border:1px solid var(--line)}
+.rubric .rrow{display:grid;grid-template-columns:1fr auto auto;gap:12px;
+  padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:13px}
+.rubric .rrow:last-child{border-bottom:none}
+.rubric .rrow.total{color:var(--amber);font-weight:600}
+.rubric .rbarwrap{width:120px;height:8px;background:var(--bg);
+  border:1px solid var(--line);align-self:center}
+.rubric .rbar{height:100%;background:var(--amber)}
+.rubric .rrow.total .rbar{background:var(--valid)}
+.rubric .rrow.total.fail .rbar{background:var(--err)}
 .donebadge{font-family:var(--mono);font-size:12px;color:var(--valid)}
 .loading{font-family:var(--mono);color:var(--ink-dim);padding:40px}
 </style>
@@ -141,7 +157,18 @@ legend{font-weight:600;margin-bottom:8px;font-size:15px}
         <span class="tag">Lab</span>
         <h2 id="lab-h"></h2>
         <p>Starter template: <a class="repo" id="lab-repo" href="#" rel="noopener"></a></p>
-        <p>Submissions are graded by the automated harness (coming in the lab phase).</p>
+        <div id="lab-grader" hidden>
+          <label class="lab-label" for="lab-code">Paste your solution.py and submit for grading</label>
+          <textarea id="lab-code" rows="14" spellcheck="false"
+                    aria-describedby="lab-status"></textarea>
+          <p>
+            <button class="btn" id="lab-submit" type="button">Submit for grading</button>
+          </p>
+          <p class="qstatus" id="lab-status" role="status" aria-live="polite"></p>
+          <div id="lab-rubric"></div>
+        </div>
+        <p id="lab-nograder" hidden>Automated grading for this lab is coming soon —
+          work through it locally with the <code>grade</code> CLI.</p>
       </section>
       <section class="panelbox" id="quizbox" hidden aria-labelledby="quiz-h">
         <span class="tag">Quiz</span>
@@ -256,6 +283,82 @@ async function submitQuiz(){
   }
 }
 
+function renderRubric(sub){
+  const box=$('lab-rubric');box.textContent='';
+  if(!sub)return;
+  if(sub.error){
+    const p=document.createElement('p');p.className='qstatus err';
+    p.textContent='HARNESS ERROR: '+sub.error;box.appendChild(p);return;
+  }
+  if(sub.status!=='graded'||!sub.categories)return;
+  const table=document.createElement('div');table.className='rubric';
+  table.setAttribute('role','table');table.setAttribute('aria-label','Grading rubric');
+  Object.entries(sub.categories).forEach(([name,cat])=>{
+    const row=document.createElement('div');row.className='rrow';row.setAttribute('role','row');
+    const label=document.createElement('span');
+    label.textContent=name.replace(/_/g,' ')+' ('+cat.passed+'/'+cat.total+')';
+    const score=document.createElement('span');score.textContent=cat.score.toFixed(2);
+    const barw=document.createElement('span');barw.className='rbarwrap';
+    const bar=document.createElement('span');bar.className='rbar';
+    bar.style.display='block';bar.style.width=Math.round(cat.score*100)+'%';
+    barw.appendChild(bar);
+    row.append(label,score,barw);table.appendChild(row);
+  });
+  const totalRow=document.createElement('div');
+  totalRow.className='rrow total'+(sub.passed?'':' fail');
+  const tl=document.createElement('span');
+  tl.textContent='TOTAL — '+(sub.passed?'PASS':'FAIL');
+  const ts=document.createElement('span');ts.textContent=sub.score.toFixed(2);
+  const tbw=document.createElement('span');tbw.className='rbarwrap';
+  const tb=document.createElement('span');tb.className='rbar';
+  tb.style.display='block';tb.style.width=Math.round(sub.score*100)+'%';
+  tbw.appendChild(tb);
+  totalRow.append(tl,ts,tbw);table.appendChild(totalRow);
+  box.appendChild(table);
+}
+
+async function refreshSubmissions(){
+  const subs=await api('/api/lessons/'+currentCode+'/lab/submissions');
+  const status=$('lab-status');
+  if(!subs.length){status.className='qstatus';status.textContent='';renderRubric(null);return null;}
+  const latest=subs[0];
+  if(latest.status==='graded'){
+    status.className='qstatus '+(latest.passed?'ok':'err');
+    status.textContent='GRADED: score '+latest.score.toFixed(2)+' — '+(latest.passed?'PASS':'FAIL');
+  }else if(latest.status==='error'){
+    status.className='qstatus err';status.textContent='HARNESS ERROR — see below.';
+  }else{
+    status.className='qstatus';status.textContent='STATUS: '+latest.status+'…';
+  }
+  renderRubric(latest);
+  return latest;
+}
+
+let pollTimer=null;
+async function submitLab(){
+  const code=$('lab-code').value;
+  const status=$('lab-status');
+  if(!code.trim()){status.className='qstatus err';status.textContent='ERR: paste your solution first.';return;}
+  $('lab-submit').disabled=true;
+  status.className='qstatus';status.textContent='TX: uploading…';
+  try{
+    await post('/api/lessons/'+currentCode+'/lab/submit',{content:code});
+    status.textContent='STATUS: queued — grading…';
+    let polls=0;
+    clearInterval(pollTimer);
+    pollTimer=setInterval(async()=>{
+      polls++;
+      const latest=await refreshSubmissions().catch(()=>null);
+      if((latest&&(latest.status==='graded'||latest.status==='error'))||polls>40){
+        clearInterval(pollTimer);$('lab-submit').disabled=false;
+      }
+    },1500);
+  }catch(err){
+    status.className='qstatus err';status.textContent='ERR: '+err.message;
+    $('lab-submit').disabled=false;
+  }
+}
+
 async function markComplete(){
   try{
     await post('/api/lessons/'+currentCode+'/complete');
@@ -284,6 +387,13 @@ async function showLesson(code){
     $('labbox').hidden=false;$('lab-h').textContent=lesson.lab.title;
     const repo=$('lab-repo');repo.textContent=lesson.lab.repo_template_url;
     repo.href=lesson.lab.repo_template_url;
+    clearInterval(pollTimer);
+    if(lesson.lab.gradable){
+      $('lab-grader').hidden=false;$('lab-nograder').hidden=true;
+      refreshSubmissions().catch(()=>{});
+    }else{
+      $('lab-grader').hidden=true;$('lab-nograder').hidden=false;
+    }
   }else{$('labbox').hidden=true;}
   renderQuiz(lesson.quiz,lesson.last_attempt);
   $('done-badge').hidden=!lesson.completed;
@@ -314,6 +424,7 @@ async function init(){
   });
   $('quiz-submit').addEventListener('click',submitQuiz);
   $('complete-btn').addEventListener('click',markComplete);
+  $('lab-submit').addEventListener('click',submitLab);
   window.addEventListener('hashchange',route);
   if(!location.hash&&tree.modules.length&&tree.modules[0].lessons.length){
     location.hash='#/lesson/'+tree.modules[0].lessons[0].code;

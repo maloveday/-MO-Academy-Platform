@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
+from app.config import get_settings
 from app.db import get_db
 from app.models import (
     Course,
@@ -154,6 +155,11 @@ def lesson_detail(
             {
                 "title": lesson.lab.title,
                 "repo_template_url": lesson.lab.repo_template_url,
+                "gradable": (
+                    get_settings().labs_dir
+                    / f"lab-{lesson.code.replace('.', '-')}"
+                    / "lab.json"
+                ).exists(),
             }
             if lesson.lab
             else None

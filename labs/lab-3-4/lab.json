@@ -1,0 +1,12 @@
+{
+  "slug": "lab-3-4",
+  "lesson": "3.4",
+  "title": "SetHeaterState with progress events",
+  "weights": {
+    "correctness": 0.5,
+    "pattern_usage": 0.3,
+    "entity_separation": 0.2
+  },
+  "pass_threshold": 0.7,
+  "submission_files": ["solution.py"]
+}

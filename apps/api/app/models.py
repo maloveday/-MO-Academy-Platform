@@ -203,6 +203,31 @@ class LessonProgress(Base):
     )
 
 
+class LabSubmission(Base):
+    """A student's lab submission and its grading state.
+
+    ``status``: queued → running → graded, or error (harness failure —
+    distinct from a graded-but-failing submission, which is status=graded
+    with rubric.passed false).
+    """
+
+    __tablename__ = "lab_submissions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    lesson_id: Mapped[int] = mapped_column(ForeignKey("lessons.id"), index=True)
+    filename: Mapped[str] = mapped_column(String(100), default="solution.py")
+    content: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="queued", index=True)
+    rubric: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+    graded_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=None
+    )
+
+
 class QuizAttempt(Base):
     __tablename__ = "quiz_attempts"
 

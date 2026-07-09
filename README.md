@@ -59,7 +59,13 @@ uvicorn app.main:app --reload
       `content/syllabus_full.md` (`python -m app.seed`, idempotent), student
       dashboard (`/dashboard.html`) with progress tracking, markdown lesson
       viewer, and a multiple-choice quiz engine with stored attempts.
-- [ ] Phase 3 — Lab grading harness (`mo_teach`, sandboxed grader, 2 labs)
+- [x] **Phase 3 — Lab grading harness**: `packages/mo_teach` (broker,
+      Parameter/Action provider + consumer, grown from the course
+      boilerplate), pytest-based reference consumers with rubric markers,
+      `grade submission_dir/ --lab labs/lab-3-3` CLI, lab submit/results API
+      wired into the dashboard, and two fully working labs: 3.3 (parameter
+      dashboard via PUB-SUB) and 3.4 (SetHeaterState with progress events).
+      Rubric: correctness / pattern usage / entity separation.
 - [ ] Phase 4 — Ops (admin panel, CI, deploy notes)
 
 ## Tests

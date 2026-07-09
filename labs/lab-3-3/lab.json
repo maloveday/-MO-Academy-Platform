@@ -1,0 +1,12 @@
+{
+  "slug": "lab-3-3",
+  "lesson": "3.3",
+  "title": "Parameter dashboard via PUB-SUB",
+  "weights": {
+    "correctness": 0.5,
+    "pattern_usage": 0.3,
+    "entity_separation": 0.2
+  },
+  "pass_threshold": 0.7,
+  "submission_files": ["solution.py"]
+}

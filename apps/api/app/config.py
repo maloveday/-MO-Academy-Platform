@@ -30,6 +30,13 @@ class Settings(BaseSettings):
 
     web_dir: Path = REPO_ROOT / "apps" / "web"
     content_dir: Path = REPO_ROOT / "content"
+    labs_dir: Path = REPO_ROOT / "labs"
+
+    # "docker" runs submissions sandboxed (--network=none, mem/cpu limits) in
+    # GRADER_IMAGE; "subprocess" runs them unsandboxed — dev/tests only.
+    grader_mode: Literal["subprocess", "docker"] = "subprocess"
+    grader_image: str = "mo-academy-grader"
+    grader_timeout: int = 180
 
 
 @lru_cache
